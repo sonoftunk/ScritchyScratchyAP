@@ -7,7 +7,7 @@
 
     <!-- EDIT THIS to your own Scritchy Scratchy install folder before building.
          Everything below (interop references, post-build copy) reads from this. -->
-    <GameDir>D:\SteamLibrary\steamapps\common\Scritchy Scratchy</GameDir>
+    <GameDir>C:\Program Files (x86)\Steam\steamapps\common\Scritchy Scratchy</GameDir>
   </PropertyGroup>
 
   <ItemGroup>
