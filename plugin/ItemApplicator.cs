@@ -512,7 +512,7 @@ namespace ScritchyScratchyAP
 
         // Traps
         // Debt Trap: remove 25% of current balance via SetMoney.
-        // Loan Trap: spawns a loan via Player.SpawnLoanWithDialogue.
+        // Loan Trap: spawns a loan via PlayerCashOut.SpawnLoanWithDialogue.
         private static void ApplyDebtTrap()
         {
             var wallet = UnityEngine.Object.FindObjectOfType<PlayerWallet>();
@@ -530,12 +530,12 @@ namespace ScritchyScratchyAP
         {
             try
             {
-                var player = UnityEngine.Object.FindObjectOfType<Player>(true);
-                if (player == null)
-                    throw new Exception("Player not found");
+                var cashOut = UnityEngine.Object.FindObjectOfType<PlayerCashOut>(true);
+                if (cashOut == null)
+                    throw new Exception("PlayerCashOut not found");
 
                 Plugin.Log.LogInfo("AP ItemApplicator: Loan Trap - spawning loan with dialogue");
-                player.SpawnLoanWithDialogue();
+                cashOut.SpawnLoanWithDialogue();
             }
             catch (Exception ex)
             {
@@ -545,14 +545,14 @@ namespace ScritchyScratchyAP
         }
 
         // Temporary streak effects
-        // ScratchLuck/LuckReduction reset on PopulateShop, so bonuses are
+        // BaseScratchLuck/LuckReduction reset on PopulateShop, so bonuses are
         // re-applied in ReapplyTemporaryEffects. Stacking extends duration.
         private static void ApplyLuckyStreak()
         {
             _luckyStreakTickets += 3;
             var scratching = UnityEngine.Object.FindObjectOfType<PlayerScratching>(true);
             if (scratching != null)
-                scratching.ScratchLuck += STREAK_LUCK_AMOUNT;
+                scratching.BaseScratchLuck += STREAK_LUCK_AMOUNT;
             Plugin.Log.LogInfo($"AP ItemApplicator: Lucky Streak - ScratchLuck +{STREAK_LUCK_AMOUNT} for {_luckyStreakTickets} ticket(s)");
         }
 
@@ -574,7 +574,7 @@ namespace ScritchyScratchyAP
 
             if (_luckyStreakTickets > 0)
             {
-                scratching.ScratchLuck += STREAK_LUCK_AMOUNT;
+                scratching.BaseScratchLuck += STREAK_LUCK_AMOUNT;
                 Plugin.Log.LogInfo($"AP ItemApplicator: Lucky Streak re-applied - {_luckyStreakTickets} ticket(s) remaining");
             }
             if (_unluckyStreakTickets > 0)
@@ -595,7 +595,7 @@ namespace ScritchyScratchyAP
                     Plugin.Log.LogInfo("AP ItemApplicator: Lucky Streak expired");
                     var scratching = UnityEngine.Object.FindObjectOfType<PlayerScratching>(true);
                     if (scratching != null)
-                        scratching.ScratchLuck = Math.Max(0, scratching.ScratchLuck - STREAK_LUCK_AMOUNT);
+                        scratching.BaseScratchLuck = Math.Max(0, scratching.BaseScratchLuck - STREAK_LUCK_AMOUNT);
                 }
             }
             if (_unluckyStreakTickets > 0)

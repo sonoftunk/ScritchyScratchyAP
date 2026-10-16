@@ -233,13 +233,15 @@ namespace ScritchyScratchyAP
         }
     }
 
-    // Fires when the player prestiges (dies at Final Chance).
+    // EndRun handles several kinds of run endings; only prestige sends this check.
     // Sends the "Prestige N" check for the N-th prestige (up to 5).
-    [HarmonyPatch(typeof(PrestigeManager), nameof(PrestigeManager.Prestige))]
+    [HarmonyPatch(typeof(PrestigeManager), nameof(PrestigeManager.EndRun))]
     public class Patch_Prestige
     {
-        static void Postfix()
+        static void Postfix(RunEnd __0)
         {
+            if (__0 != RunEnd.Prestige) return;
+
             APUpdateManager.Enqueue(() =>
             {
                 TrackingManager.OnPrestige();
@@ -282,11 +284,9 @@ namespace ScritchyScratchyAP
         }
     }
 
-    // Final Chance death routes through Player.DiscardTicket. Not sure which
-    // of CashOutTicket/DiscardTicket a win uses, so both are hooked. Routing
-    // is gated to Final Chance variants and the goal ticket only, so 
-    // discarding an unplayed normal tickets never falsely awards a check.
-    [HarmonyPatch(typeof(Player), nameof(Player.CashOutTicket))]
+    // Ticket outcome handling now lives on PlayerCashOut. Hook both paths because
+    // Final Chance completion may cash out or discard the goal ticket.
+    [HarmonyPatch(typeof(PlayerCashOut), nameof(PlayerCashOut.CashOutTicket))]
     public class Patch_Player_CashOutTicket
     {
         static void Postfix(Ticket __0)
@@ -295,7 +295,7 @@ namespace ScritchyScratchyAP
         }
     }
 
-    [HarmonyPatch(typeof(Player), nameof(Player.DiscardTicket))]
+    [HarmonyPatch(typeof(PlayerCashOut), nameof(PlayerCashOut.DiscardTicket))]
     public class Patch_Player_DiscardTicket
     {
         static void Postfix(Ticket __0)
