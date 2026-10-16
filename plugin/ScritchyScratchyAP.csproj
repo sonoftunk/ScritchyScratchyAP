@@ -47,7 +47,7 @@
   </ItemGroup>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Copy SourceFiles="$(TargetPath)"
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)Archipelago.MultiClient.Net.dll;$(TargetDir)Il2Cpp.TlsAdapter.dll;$(TargetDir)Newtonsoft.Json.dll"
 			  DestinationFolder="$(GameDir)\BepInEx\plugins\"
 			  OverwriteReadOnlyFiles="true"
 			  SkipUnchangedFiles="false" />
