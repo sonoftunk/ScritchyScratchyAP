@@ -294,6 +294,25 @@ namespace ScritchyScratchyAP
             TrySendCheck($"Buy {previousScratchSize} Level 2");
         }
 
+        // Tool Belt level 1 unlocks Big Sponge, levels 2-5 unlock Tin..Bronze. Scratch Size
+        // for every coin below the unlocked one can no longer be bought and is sent here.
+        private static readonly string[] CoinOrder =
+        {
+            "Base Coin", "Tin Coin", "Aluminum Coin", "Copper Coin", "Bronze Coin",
+            "Iron Coin", "Steel Coin", "Titanium Coin", "Tungsten Coin",
+        };
+
+        private static void AutoCompleteScratchSizeForToolBelt(int toolBeltLevel)
+        {
+            for (int i = 0; i < toolBeltLevel - 1 && i < CoinOrder.Length; i++)
+            {
+                string scratchSize = $"Scratch Size {CoinOrder[i]}";
+                Plugin.Log.LogInfo($"AP Tracking: Auto-completing {scratchSize} (Tool Belt level {toolBeltLevel}).");
+                TrySendCheck($"Buy {scratchSize} Level 1");
+                TrySendCheck($"Buy {scratchSize} Level 2");
+            }
+        }
+
         // Catches up any coin tiers that were already bought before this session started,
         // ensuring their previous tier's Scratch Size checks are auto-completed. Safe to
         // call repeatedly, TrySendCheck no-ops for already-sent locations. Runs once at
@@ -360,6 +379,8 @@ namespace ScritchyScratchyAP
                 int level = Math.Min(manualBuyCount, max);
                 for (int l = 1; l <= level; l++)
                     TrySendCheck($"Buy Prestige Perk {perkId} Level {l}");
+                if (perkId == "Tool Belt")
+                    AutoCompleteScratchSizeForToolBelt(level);
                 Save();
                 return;
             }
