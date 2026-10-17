@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from Options import Choice, PerGameCommonOptions
+from Options import Choice, PerGameCommonOptions, Toggle
 
 
 class CoinMode(Choice):
@@ -15,6 +15,13 @@ class CoinMode(Choice):
     default = 1
 
 
+class JunkSuperTicketChecks(Toggle):
+    """Replace Super ticket cash-out rewards with cash-injection filler."""
+    display_name = "Junk Super Ticket Checks"
+    default = 0
+
+
 @dataclass
 class ScritchyScratchyOptions(PerGameCommonOptions):
     coin_mode: CoinMode
+    junk_super_ticket_checks: JunkSuperTicketChecks

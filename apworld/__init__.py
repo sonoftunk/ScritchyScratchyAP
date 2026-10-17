@@ -181,6 +181,9 @@ class ScritchyScratchyWorld(World):
                 region
             )
             location.progress_type = loc_data.progress_type
+            if (loc_name.startswith("Cash Out Super_") and
+                    self.options.junk_super_ticket_checks.value):
+                location.place_locked_item(self.create_item(self.get_filler_item_name()))
             region.locations.append(location)
 
         # Place locked Progressive Prestige items at each "Prestige N" location.
