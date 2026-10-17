@@ -67,8 +67,17 @@ namespace ScritchyScratchyAP
             _instance = this;
         }
 
+        private float _prestigeLabelTimer = 0f;
+
         void Update()
         {
+            _prestigeLabelTimer -= Time.unscaledDeltaTime;
+            if (_prestigeLabelTimer <= 0f)
+            {
+                _prestigeLabelTimer = 0.5f;
+                PrestigeProgressLabels.RefreshAll();
+            }
+
             while (_mainThreadQueue.TryDequeue(out Action action))
             {
                 try { action(); }
