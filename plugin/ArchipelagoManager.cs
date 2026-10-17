@@ -12,6 +12,14 @@ namespace ScritchyScratchyAP
         public static ArchipelagoSession Session { get; private set; }
         public static bool Connected { get; private set; } = false;
 
+        // Must match Python COIN_ORDER
+        private static readonly string[] CoinOrder =
+        {
+            "Tin Coin", "Aluminum Coin", "Copper Coin", "Bronze Coin",
+            "Iron Coin", "Steel Coin", "Titanium Coin", "Tungsten Coin",
+        };
+        private static int _progressiveCoinsReceived = 0;
+
         public static string TryConnect(string host, int port, string slotName, string password = "")
         {
             // If already connected as the same player, do nothing
@@ -84,6 +92,7 @@ namespace ScritchyScratchyAP
             // client library can raise ItemReceived for that burst before
             // LoginAsync() even returns. Subscribing after login is a race.
             TrackingManager.ResetReceivedItems();
+            _progressiveCoinsReceived = 0;
             ItemApplicator.ResetAppliedLevels();
             Session.Items.ItemReceived += OnItemReceived;
 
@@ -153,8 +162,17 @@ namespace ScritchyScratchyAP
             Plugin.Log.LogInfo($"AP: Received item '{item.ItemName}'");
             // IncrementReceivedItem is safe to call here (no IL2CPP game objects).
             // ApplyItem touches Unity objects, so enqueue it to run on the main thread.
-            int count = TrackingManager.IncrementReceivedItem(item.ItemName);
             string name = item.ItemName;
+            // Progressive Coin is translated into the matching "Unlock X Coin" so the rest of
+            // the plugin only ever deals with per-coin unlocks. Counter is reset on each login
+            // because the server replays the full item history.
+            if (name == "Progressive Coin")
+            {
+                int idx = _progressiveCoinsReceived++;
+                if (idx >= CoinOrder.Length) return;
+                name = $"Unlock {CoinOrder[idx]}";
+            }
+            int count = TrackingManager.IncrementReceivedItem(name);
             APUpdateManager.Enqueue(() => ItemApplicator.ApplyItem(name, count));
         }
     }

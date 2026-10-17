@@ -40,6 +40,18 @@ BONUS_ITEM_COUNTS = {
 
 JACKPOT_POINTS_PER_ITEM = 10  # JP awarded per Jackpot Points item received
 
+# Order coins are granted by "Progressive Coin" (Must match C# ArchipelagoManager.CoinOrder)
+COIN_ORDER = [
+    "Tin Coin", "Aluminum Coin", "Copper Coin", "Bronze Coin",
+    "Iron Coin", "Steel Coin", "Titanium Coin", "Tungsten Coin",
+]
+
+
+def coin_unlocked(state, player: int, coin: str, progressive: bool) -> bool:
+    if progressive:
+        return state.count("Progressive Coin", player) >= COIN_ORDER.index(coin) + 1
+    return state.has(f"Unlock {coin}", player)
+
 PROGRESSIVE_ITEM_COUNTS = {
     # No prerequisite, always useful, keep full count in pool.
     "Progressive Scratch Luck":         45,
@@ -134,6 +146,8 @@ item_table: dict[str, SSItemData] = {
     "Unlock Steel Coin":        SSItemData(ItemClassification.progression, ItemType.UPGRADE, ITEM_BASE + 106),
     "Unlock Titanium Coin":     SSItemData(ItemClassification.progression, ItemType.UPGRADE, ITEM_BASE + 107),
     "Unlock Tungsten Coin":     SSItemData(ItemClassification.progression, ItemType.UPGRADE, ITEM_BASE + 108),
+    # Only in the pool when coin_mode is progressive; replaces the 8 individual coin unlocks
+    "Progressive Coin":         SSItemData(ItemClassification.progression, ItemType.UPGRADE, ITEM_BASE + 119),
     "Unlock Trash Can":         SSItemData(ItemClassification.progression, ItemType.UPGRADE, ITEM_BASE + 109),
     "Unlock Scratch Bot":       SSItemData(ItemClassification.progression, ItemType.UPGRADE, ITEM_BASE + 110),
     "Unlock Fan":               SSItemData(ItemClassification.progression, ItemType.UPGRADE, ITEM_BASE + 111),

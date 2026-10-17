@@ -6,11 +6,15 @@ from .locations import (SUPER_TICKETS, MULTI_LEVEL_UPGRADES, TICKET_THRESHOLDS, 
                         SINGLE_PURCHASE_UPGRADES,
                         PRESTIGE_SINGLE_PERKS, PRESTIGE_MULTI_PERKS,
                         PRESTIGE_PERK_PREREQUISITES)
-from .items import PROGRESSIVE_ITEM_COUNTS
+from .items import PROGRESSIVE_ITEM_COUNTS, coin_unlocked
 
 def set_rules(world: World) -> None:
     multiworld = world.multiworld
     player = world.player
+    progressive_coins = bool(world.options.coin_mode.value)
+
+    def has_coin(coin: str, state: CollectionState) -> bool:
+        return coin_unlocked(state, player, coin, progressive_coins)
 
     # Helper Functions
     def has(item_name: str, state: CollectionState) -> bool:
@@ -191,17 +195,18 @@ def set_rules(world: World) -> None:
         "Warp Speed":           "Unlock The Machine",
     }
     scratch_size_coin_reqs = {
-        "Scratch Size Tin Coin":       "Unlock Tin Coin",
-        "Scratch Size Aluminum Coin":  "Unlock Aluminum Coin",
-        "Scratch Size Copper Coin":    "Unlock Copper Coin",
-        "Scratch Size Bronze Coin":    "Unlock Bronze Coin",
-        "Scratch Size Iron Coin":      "Unlock Iron Coin",
-        "Scratch Size Steel Coin":     "Unlock Steel Coin",
-        "Scratch Size Titanium Coin":  "Unlock Titanium Coin",
-        "Scratch Size Tungsten Coin":  "Unlock Tungsten Coin",
+        "Scratch Size Tin Coin":       "Tin Coin",
+        "Scratch Size Aluminum Coin":  "Aluminum Coin",
+        "Scratch Size Copper Coin":    "Copper Coin",
+        "Scratch Size Bronze Coin":    "Bronze Coin",
+        "Scratch Size Iron Coin":      "Iron Coin",
+        "Scratch Size Steel Coin":     "Steel Coin",
+        "Scratch Size Titanium Coin":  "Titanium Coin",
+        "Scratch Size Tungsten Coin":  "Tungsten Coin",
     }
     for upgrade_id, max_level in MULTI_LEVEL_UPGRADES:
-        required_item = gadget_upgrades.get(upgrade_id) or scratch_size_coin_reqs.get(upgrade_id)
+        gadget_req = gadget_upgrades.get(upgrade_id)
+        coin_req = scratch_size_coin_reqs.get(upgrade_id)
         # Gadget-gated upgrades only have HALF their real max_level worth of
         # "Progressive {upgrade}" copies in the item pool. The remaining levels
         # are meant to be freely buyable at normal price once the base gadget is
@@ -212,8 +217,9 @@ def set_rules(world: World) -> None:
         pool_count = PROGRESSIVE_ITEM_COUNTS.get(f"Progressive {upgrade_id}", max_level)
         for level in range(1, max_level + 1):
             set_rule_safe(f"Buy {upgrade_id} Level {level}",
-                lambda state, u=upgrade_id, lv=level, req=required_item, pc=pool_count: (
+                lambda state, u=upgrade_id, lv=level, req=gadget_req, cr=coin_req, pc=pool_count: (
                     (req is None or has(req, state)) and
+                    (cr is None or has_coin(cr, state)) and
                     (lv > pc or state.count(f"Progressive {u}", player) >= lv)
                 ))
 
@@ -249,7 +255,7 @@ def set_rules(world: World) -> None:
         ss_base = _coin_scratch_prerequisites[coin]
         prev_rule = previous_coin_rule
         coin_rule = lambda state, c=coin, ss=ss_base, prev=prev_rule: (prev(
-            state) and has(f"Unlock {c}", state) and state.count(
+            state) and has_coin(c, state) and state.count(
                 f"Progressive {ss}", player) >= 2)
         set_rule_safe(f"Buy {coin}", coin_rule)
         _coin_owned_rule[coin] = coin_rule

@@ -3,7 +3,9 @@ from worlds.AutoWorld import World, WebWorld
 from BaseClasses import Tutorial, Item, ItemClassification, Region, Location
 from .items import (item_table, ItemType, PROGRESSIVE_ITEM_COUNTS,
                     PRESTIGE_PROGRESSIVE_ITEM_COUNTS, BONUS_ITEM_COUNTS,
-                    JACKPOT_POINTS_PER_ITEM, STREAK_ITEM_COUNTS)
+                    JACKPOT_POINTS_PER_ITEM, STREAK_ITEM_COUNTS,
+                    COIN_ORDER, coin_unlocked)
+from .options import ScritchyScratchyOptions
 from .locations import (location_table, REGIONS, PRESTIGE_LOCATION_COUNT,
                         CATALOG_1_TICKETS, CATALOG_2_TICKETS,
                         CATALOG_3_TICKETS, CATALOG_4_TICKETS)
@@ -42,6 +44,8 @@ class ScritchyScratchyWorld(World):
 
     game = "Scritchy Scratchy"
     web = SSWebWorld()
+    options_dataclass = ScritchyScratchyOptions
+    options: ScritchyScratchyOptions
 
     item_name_to_id = {
         name: data.code
@@ -62,8 +66,18 @@ class ScritchyScratchyWorld(World):
     # location pool (~7 locations) and starved out other early-critical items
     # like Unlock Two Win. Two items leaves plenty of room.
     def generate_early(self) -> None:
+        if self.progressive_coins:
+            self.multiworld.early_items[self.player]["Progressive Coin"] = 2
+            return
         for coin in ["Tin Coin", "Aluminum Coin"]:
             self.multiworld.early_items[self.player][f"Unlock {coin}"] = 1
+
+    @property
+    def progressive_coins(self) -> bool:
+        return bool(self.options.coin_mode.value)
+
+    def has_coin(self, state, coin: str) -> bool:
+        return coin_unlocked(state, self.player, coin, self.progressive_coins)
 
     # Region Creation
     def create_regions(self) -> None:
@@ -82,7 +96,7 @@ class ScritchyScratchyWorld(World):
         e = regions["Beginning"].connect(regions["Catalog 1"])
         e.access_rule = lambda state: (
             state.has(f"Unlock {CATALOG_1_TICKETS[0]}", self.player) and
-            state.has("Unlock Tin Coin", self.player) and
+            self.has_coin(state, "Tin Coin") and
             state.count("Progressive Scratch Size Base Coin", self.player) >= 2
         )
 
@@ -105,7 +119,7 @@ class ScritchyScratchyWorld(World):
             # (confirmed in-game), without it the AP item alone doesn't let the
             # player reach Catalog 2 in practice.
             state.count("Progressive Scratch Luck", self.player) >= 8 and
-            state.has("Unlock Aluminum Coin", self.player) and
+            self.has_coin(state, "Aluminum Coin") and
             state.count("Progressive Scratch Size Aluminum Coin", self.player) >= 1 and
             all(state.has(f"Unlock {t}", self.player) for t in CATALOG_1_TICKETS)
         )
@@ -119,7 +133,7 @@ class ScritchyScratchyWorld(World):
         e = regions["Catalog 2"].connect(regions["Prestige Tier 2"])
         e.access_rule = lambda state: (
             state.has("Unlock Final Chance 2", self.player) and
-            state.has("Unlock Bronze Coin", self.player) and
+            self.has_coin(state, "Bronze Coin") and
             state.count("Progressive Scratch Size Bronze Coin", self.player) >= 1 and
             all(state.has(f"Unlock {t}", self.player) for t in CATALOG_2_TICKETS)
         )
@@ -133,7 +147,7 @@ class ScritchyScratchyWorld(World):
         e = regions["Catalog 3"].connect(regions["Prestige Tier 3"])
         e.access_rule = lambda state: (
             state.has("Unlock Final Chance 3", self.player) and
-            state.has("Unlock Steel Coin", self.player) and
+            self.has_coin(state, "Steel Coin") and
             state.count("Progressive Scratch Size Steel Coin", self.player) >= 1 and
             all(state.has(f"Unlock {t}", self.player) for t in CATALOG_3_TICKETS)
         )
@@ -148,7 +162,7 @@ class ScritchyScratchyWorld(World):
         e.access_rule = lambda state: (
             state.has("Unlock Booster Pack", self.player) and
             state.has("Unlock Final Chance 4", self.player) and
-            state.has("Unlock Tungsten Coin", self.player) and
+            self.has_coin(state, "Tungsten Coin") and
             state.count("Progressive Scratch Size Tungsten Coin", self.player) >= 2
         )
 
@@ -209,6 +223,12 @@ class ScritchyScratchyWorld(World):
         for item_name, data in item_table.items():
             if data.item_type == ItemType.LOCKED:
                 continue  # Placed as locked items in create_regions
+            elif item_name == "Progressive Coin":
+                if self.progressive_coins:
+                    items_to_create.extend([item_name] * len(COIN_ORDER))
+            elif item_name in {f"Unlock {c}" for c in COIN_ORDER}:
+                if not self.progressive_coins:
+                    items_to_create.append(item_name)
             elif data.item_type == ItemType.PROGRESSIVE:
                 count = all_progressive_counts.get(item_name, 1)
                 items_to_create.extend([item_name] * count)
@@ -262,4 +282,5 @@ class ScritchyScratchyWorld(World):
             "game_version": "0.1.2-hotfix.2-linuxtest.2",
             "death_link": False,
             "jackpot_points_per_item": JACKPOT_POINTS_PER_ITEM,
+            "coin_mode": self.options.coin_mode.value,
         }
