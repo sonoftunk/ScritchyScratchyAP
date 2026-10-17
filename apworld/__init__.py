@@ -271,6 +271,7 @@ class ScritchyScratchyWorld(World):
         return self.multiworld.random.choice([
             "Small Cash Injection",
             "Large Cash Injection",
+            "Jackpot Points",
         ])
 
     # Rules
